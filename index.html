@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Добавить подписку в Happ</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #15171a;
+    --muted: #6b7280;
+    --accent: #2f6bff;
+    --accent-text: #ffffff;
+    --line: #e2e5ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1013;
+      --card: #181b20;
+      --text: #f2f4f7;
+      --muted: #98a1ae;
+      --accent: #4d86ff;
+      --accent-text: #ffffff;
+      --line: #2a2f37;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 0 0 16px; }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0 0;
+    border: 0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .primary { background: var(--accent); color: var(--accent-text); }
+  .secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .hint { font-size: 13px; margin: 16px 0 0; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1 id="title">Добавить подписку в Happ</h1>
+    <p id="msg">Нажмите кнопку, чтобы открыть Happ. Подписка добавится автоматически.</p>
+    <a id="open" class="btn primary" href="#">Открыть в Happ</a>
+    <button id="copy" class="btn secondary" type="button">Скопировать ссылку подписки</button>
+    <p class="hint" id="hint">Если Happ не открылся, установите его из App Store или Google Play
+      и нажмите кнопку ещё раз. Или скопируйте ссылку и добавьте подписку вручную.</p>
+  </main>
+
+<script>
+(function () {
+  var msg = document.getElementById("msg");
+  var hint = document.getElementById("hint");
+  var openBtn = document.getElementById("open");
+  var copyBtn = document.getElementById("copy");
+
+  // Ссылка подписки приходит во фрагменте (#u=...), он не уходит на сервер.
+  var match = location.hash.replace(/^#/, "").match(/^u=(.+)$/);
+  var url = "";
+  try { url = match ? decodeURIComponent(match[1]) : ""; } catch (e) { url = ""; }
+
+  // Принимаем только обычные https-ссылки; схема happ:// всегда задана здесь.
+  if (!/^https:\/\/[^\s]+$/.test(url)) {
+    msg.textContent = "Ссылка подписки не найдена. Вернитесь в Telegram и нажмите кнопку ещё раз.";
+    openBtn.style.display = "none";
+    copyBtn.style.display = "none";
+    hint.style.display = "none";
+    return;
+  }
+
+  var deep = "happ://add/" + url;
+  openBtn.setAttribute("href", deep);
+
+  copyBtn.addEventListener("click", function () {
+    function done() { copyBtn.textContent = "Ссылка скопирована"; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, fallback);
+    } else {
+      fallback();
+    }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  });
+
+  // Пробуем открыть Happ сразу; если браузер не разрешил, остаётся кнопка.
+  setTimeout(function () { location.href = deep; }, 400);
+})();
+</script>
+</body>
+</html>
